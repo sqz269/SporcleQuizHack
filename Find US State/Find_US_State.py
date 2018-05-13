@@ -64,7 +64,7 @@ class Play(object):
 			if Driver.find_element_by_id('game_page_login_error').is_displayed():
 				print(Status_Code.Status_FATAL + "Failed to login. Please manuly login and Press Enter to continue")
 				input("Press Enter to Continue")
-		except StaleElementReferenceException:
+		except:
 			pass
 
 		print(Status_Code.Status_OK + "Login Success")
