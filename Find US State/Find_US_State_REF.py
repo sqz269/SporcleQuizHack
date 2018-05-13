@@ -59,7 +59,7 @@ class Play(object):
 		print(Status_Code.Status_INFO + "ENTERING PASSWORD")
 		print(Status_Code.Status_INFO + "LOGGING IN")
 		Driver.find_element_by_id('game_page_login_btn').click()
-		
+		sleep(1)
 		try:
 			if Driver.find_element_by_id('game_page_login_error').is_displayed():
 				print(Status_Code.Status_FATAL + "Failed to login. Please manuly login and Press Enter to continue")
@@ -137,33 +137,21 @@ class Play(object):
 
 		while True:  # For playing again
 			
-			print("EXEC")
 			try:
 				self.Driver.find_element_by_id('button-connect-showdown').click()
 			except:
 				print(Status_Code.Status_FATAL + "FAILED TO CLICK ON FIND OPPONENT BTN. PLEASE CLICK IT THEN PRESS ENTER")
 				input("PRESS ENTER TO CONTINUE")
 
-			print("EXEC 147")
-			Wait_Oppoent_Time = 0
-			while True:
-				try:
-					if self.Driver.find_element_by_id('showdown-queueing-message-textbox').is_displayed():
-						Wait_Oppoent_Time += 1
-						print("Matching up for opponent. Time Elapsed: {}".format(Wait_Oppoent_Time), end='\r')
-						sleep(1)
-					else:
-						break
-				except:
-					break
 
-			print("EXEC 155")
-			print(Status_Code.Status_INFO + "FOUND")
+			Wait_Oppoent_Time = 0
 			while True:	
 				if self.Driver.find_element_by_id('answer-wrapper').is_displayed():
 					break
+				Wait_Oppoent_Time += 1
+				print("Matching up for opponent. Time Elapsed: {}".format(Wait_Oppoent_Time), end='\r')
+				sleep(1)
 
-			print(Status_Code.Status_INFO + "Starting")
 
 			try:
 				for x in range(50):
@@ -195,7 +183,7 @@ class Play(object):
 						self.Driver.find_element_by_id(Element).click()
 						continue
 			except NoSuchElementException:
-				print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE. CONTINUEING")
+				print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE. CONTINUING")
 
 			print(Status_Code.Status_OK + "Done\n")
 
