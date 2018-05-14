@@ -8,6 +8,16 @@ from State_DB import *
 
 init(autoreset=True)
 
+
+def is_win():
+	import os
+	if os.name == 'nt':
+		return True
+	else:
+		return False
+	
+
+
 class Status_Code():
 	Status_OK = "[{}+{}]".format(Fore.LIGHTGREEN_EX, Fore.RESET)
 	Status_FATAL = "[{}-{}]".format(Fore.LIGHTRED_EX, Fore.RESET)
@@ -73,8 +83,12 @@ class Play(object):
 
 	def Play_Solo(self):
 		print(Status_Code.Status_INFO + "Starting a new chrome session")
-		self.Driver = webdriver.Chrome('chromedriver.exe')
-		
+
+		if is_win():
+			self.Driver = webdriver.Chrome('chromedriver.exe')
+		else:
+			self.Driver = webdriver.Chrome('./chromedriver')
+
 		print(Status_Code.Status_INFO + "Getting Sporcle Quiz Page")
 		self.Driver.get(self.Play_URL)
 		print(Status_Code.Status_OK + "Page loading complete")
@@ -92,33 +106,18 @@ class Play(object):
 		print(Status_Code.Status_INFO + "Starting")
 
 		for x in range(50):
-			Current_State = self.Driver.find_element_by_id('currgamename').text
-			print('\n' + Current_State)
-		# The following state will raise a error for some reason if encountered.
-			if Current_State == "Michigan":
-				self.Driver.execute_script('pickSlot();')
-				print(Status_Code.Status_WARNING + "S Michigan. E a21. WARN. O_E RECV CLK. NXT")
+			try:
+				Current_State = self.Driver.find_element_by_id('currgamename').text
+				print('\n' + Current_State)
+				Element = self.State_DB.get(Current_State)
+				print(Element)
 				sleep(0.2)
-				continue
-			if Current_State == 'Hawaii':
+				self.Driver.find_element_by_id(Element).click()
+			except WebDriverException as unknowError:
+				print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
+				print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
+				print(Status_Code.Status_INFO + "Ignoring last exception. Continuing")
 				self.Driver.execute_script('pickSlot();')
-				print(Status_Code.Status_WARNING + "S Hawaii. E a10. WARN. O_E RECV CLK. NXT")
-				sleep(0.2)
-				continue
-			if Current_State == "Louisiana":
-				self.Driver.execute_script('pickSlot();')
-				print(Status_Code.Status_WARNING + "S Louisiana. E a17. WARN. O_E RECV CLK. NXT")
-				sleep(0.2)
-				continue
-			if Current_State == "Florida":
-				self.Driver.execute_script('pickSlot();')
-				print(Status_Code.Status_WARNING + "S Florida. E a8. WARN. O_E RECV CLK. NXT")
-				sleep(0.2)
-				continue
-			Element = self.State_DB.get(Current_State)
-			print(Element)
-			sleep(0.2)
-			self.Driver.find_element_by_id(Element).click()
 		print(Status_Code.Status_OK + "DONE")
 		
 		input("Press Enter To Exit")
@@ -126,7 +125,11 @@ class Play(object):
 
 	def Play_Against(self):
 		print(Status_Code.Status_INFO + "Starting a new chrome session")
-		self.Driver = webdriver.Chrome('chromedriver.exe')
+
+		if is_win():
+			self.Driver = webdriver.Chrome('chromedriver.exe')
+		else:
+			self.Driver = webdriver.Chrome('./chromedriver')
 		
 		print(Status_Code.Status_INFO + "Getting Sporcle Quiz Page")
 		self.Driver.get(self.Play_URL)
@@ -155,33 +158,18 @@ class Play(object):
 
 			try:
 				for x in range(50):
-						sleep(0.3)
-						Current_State = self.Driver.find_element_by_id('currgamename').text  # Get Current State
-						print(Current_State)
-						# The following state will cause an unknown error if try to click on it
-						if Current_State == "Michigan":
-							self.Driver.execute_script('pickSlot();')
-							print(Status_Code.Status_WARNING + "S Michigan. E a21. WARN. O_E RECV CLK. NXT")
-							sleep(0.2)
+					try:
+							sleep(0.3)
+							Current_State = self.Driver.find_element_by_id('currgamename').text  # Get Current State
+							print(Current_State)
+							Element = self.State_DB.get(Current_State)
+							self.Driver.find_element_by_id(Element).click()
 							continue
-						if Current_State == 'Hawaii':
-							self.Driver.execute_script('pickSlot();')
-							print(Status_Code.Status_WARNING + "S Hawaii. E a10. WARN. O_E RECV CLK. NXT")
-							sleep(0.2)
-							continue
-						if Current_State == "Louisiana":
-							self.Driver.execute_script('pickSlot();')
-							print(Status_Code.Status_WARNING + "S Louisiana. E a17. WARN. O_E RECV CLK. NXT")
-							sleep(0.2)
-							continue
-						if Current_State == "Florida":
-							self.Driver.execute_script('pickSlot();')
-							print(Status_Code.Status_WARNING + "S Florida. E a8. WARN. O_E RECV CLK. NXT")
-							sleep(0.2)
-							continue
-						Element = self.State_DB.get(Current_State)
-						self.Driver.find_element_by_id(Element).click()
-						continue
+					except WebDriverException as unknowError:
+						print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
+						print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
+						print(Status_Code.Status_INFO + "Ignoring last exception. Continuing")
+						self.Driver.execute_script('pickSlot();')
 			except NoSuchElementException:
 				print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE. CONTINUING")
 
