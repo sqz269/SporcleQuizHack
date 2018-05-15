@@ -42,6 +42,9 @@ class Play(object):
 
 		self.Delay = Delay
 
+		if self.Delay < 0.07:  # If the delay is too short it won't work
+			self.Delay = 0.07
+
 		self.Game_Type = int(GameType)
 
 		self.Email = email
@@ -164,26 +167,25 @@ class Play(object):
 
 
 			try:
-				last_state = None
+				#last_state = None
 				time_start = time()
 				for x in range(50):
 					try:
 							sleep(self.Delay)
 							Current_State = self.Driver.find_element_by_id('currgamename').text  # Get Current State
-							if last_state == Current_State:
-								print(Status_Code.Status_WARNING + "STATE REPEATED. S: {}. E: {}. D: {}. POSSIBLY CAUSED BY EXTREMLY SHORT DELAY TIME")
-								print(Status_Code.Status_INFO + "IGNORING REPEATED STATE. CONTINUING\n")
-								continue
 							print(Current_State)
 							Element = self.State_DB.get(Current_State)
 							self.Driver.find_element_by_id(Element).click()
-							last_state = Current_State
+							# last_state = Current_State
 							continue
 					except WebDriverException as unknowError:
-						print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
-						print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
-						print(Status_Code.Status_INFO + "Ignoring last exception. Continuing\n\n")
-						self.Driver.execute_script('pickSlot();')
+						if "no such element" in str(unknowError):
+							print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE.")
+						else:
+							print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
+							print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
+							print(Status_Code.Status_INFO + "Ignoring last exception. Continuing\n\n")
+							self.Driver.execute_script('pickSlot();')
 			except NoSuchElementException:
 				print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE. CONTINUING")
 
