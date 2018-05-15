@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.common.exceptions import *
 
 from time import sleep
+from time import time
 from colorama import init, Fore
 
 from State_DB import *
@@ -28,7 +29,7 @@ class Status_Code():
 class Play(object):
 	
 
-	def __init__(self, email, password, GameType):
+	def __init__(self, email, password, GameType, Delay):
 		"""
 		Email: User's Email to login to Sporcle
 		Password: User's Password to login to Sporcle
@@ -38,20 +39,23 @@ class Play(object):
 		else:
 		Enter Outline Find State [https://www.sporcle.com/games/Matt/find_the_states]
 		"""
-		if GameType == 1:
-			self.Outline = True
-		else:
-			self.Outline = False
+
+		self.Delay = Delay
+
+		self.Game_Type = int(GameType)
 
 		self.Email = email
 		self.Password = password
 
-		if self.Outline:
+		if self.Game_Type == 1:
 			self.Play_URL = 'https://www.sporcle.com/games/Matt/find_the_states'
 			self.State_DB = State_Element.State_Element_Outline
-		else:
+		elif self.Game_Type == 2:
 			self.Play_URL = 'https://www.sporcle.com/games/mhershfield/us-states-no-outlines-minefield'
 			self.State_DB = State_Element.State_Element_No_Outline
+		elif self.Game_Type == 3:
+			self.Play_URL = 'https://www.sporcle.com/games/teedslaststand/build-me-a-map'
+			self.State_DB = State_Element.State_Element_Hidden
 
 		super().__init__()
 
@@ -105,20 +109,22 @@ class Play(object):
 
 		print(Status_Code.Status_INFO + "Starting")
 
+		time_start = time()
 		for x in range(50):
 			try:
 				Current_State = self.Driver.find_element_by_id('currgamename').text
 				print('\n' + Current_State)
 				Element = self.State_DB.get(Current_State)
 				print(Element)
-				sleep(0.2)
+				sleep(self.Delay)
 				self.Driver.find_element_by_id(Element).click()
 			except WebDriverException as unknowError:
 				print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
 				print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
 				print(Status_Code.Status_INFO + "Ignoring last exception. Continuing")
 				self.Driver.execute_script('pickSlot();')
-		print(Status_Code.Status_OK + "DONE")
+		time_end = time()
+		print(Status_Code.Status_OK + "DONE in {} seconds.".format(round(time_end-time_start, 1)))
 		
 		input("Press Enter To Exit")
 
@@ -154,45 +160,59 @@ class Play(object):
 				Wait_Oppoent_Time += 1
 				print("Matching up for opponent. Time Elapsed: {}".format(Wait_Oppoent_Time), end='\r')
 				sleep(1)
+			print('\n')
 
 
 			try:
+				last_state = None
+				time_start = time()
 				for x in range(50):
 					try:
-							sleep(0.3)
+							sleep(self.Delay)
 							Current_State = self.Driver.find_element_by_id('currgamename').text  # Get Current State
+							if last_state == Current_State:
+								print(Status_Code.Status_WARNING + "STATE REPEATED. S: {}. E: {}. D: {}. POSSIBLY CAUSED BY EXTREMLY SHORT DELAY TIME")
+								print(Status_Code.Status_INFO + "IGNORING REPEATED STATE. CONTINUING\n")
+								continue
 							print(Current_State)
 							Element = self.State_DB.get(Current_State)
 							self.Driver.find_element_by_id(Element).click()
+							last_state = Current_State
 							continue
 					except WebDriverException as unknowError:
 						print(Status_Code.Status_FATAL + "Encountered an exception. Exception Msg: {}".format(unknowError))
 						print(Status_Code.Status_WARNING + "At S: {}. E: {}".format(Current_State, Element))
-						print(Status_Code.Status_INFO + "Ignoring last exception. Continuing")
+						print(Status_Code.Status_INFO + "Ignoring last exception. Continuing\n\n")
 						self.Driver.execute_script('pickSlot();')
 			except NoSuchElementException:
 				print(Status_Code.Status_INFO + "EXCEPTION ENCOUNTERED. ASSUMING DONE. CONTINUING")
 
-			print(Status_Code.Status_OK + "Done\n")
+			time_end = time()
+			print(Status_Code.Status_OK + "Done in {} seconds\n".format(round(time_end - time_start, 1)))
 
 			ask_PlayAgain = int(input("Play again? Yes(1) No(2):"))
 			if ask_PlayAgain == 1:
-				self.Driver.find_element_by_id('button-replay').click()
+				try:
+					self.Driver.find_element_by_id('button-replay').click()
+				except:
+					print(Status_Code.Status_FATAL + "FAILED TO CLICK ON PLAY AGAIN BUTTON, PLEASE CLICK IT AND PRESS ENTER TO CONTINUE")
+					input("PRESS ENTER TO CONTINUE")
 				sleep(0.5)
 				continue
 			if ask_PlayAgain == 2:
 				raise SystemExit(0)
 	
 def main():
-	askPlayType = int(input("Find State: Outline(1)/No Outline(2): "))
+	askPlayType = int(input("Find State: Outline(1)/No Outline(2)/Hidden(3): "))
 	askPlayAgainst = int(input("Play SOLO(1)/Against(2): "))
+	askDelay = float(input("Delay (seconds):"))
 	askEmail = input("Email: ")
 	askPassword = input("Password: ")
 
 	if askPlayAgainst == 1:
-		Play(askEmail, askPassword, askPlayType).Play_Solo()
+		Play(askEmail, askPassword, askPlayType, askDelay).Play_Solo()
 	elif askPlayAgainst == 2:
-		Play(askEmail, askPassword, askPlayType).Play_Against()
+		Play(askEmail, askPassword, askPlayType, askDelay).Play_Against()
 
 
 main()
